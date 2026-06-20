@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Location Tracker</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial, Helvetica, sans-serif;
+        }
+
+        body{
+
+            background:#f4f4f4;
+
+            display:flex;
+            justify-content:center;
+            align-items:center;
+
+            min-height:100vh;
+
+        }
+
+        .container{
+
+            width:90%;
+            max-width:700px;
+
+            background:white;
+
+            padding:30px;
+
+            border-radius:12px;
+
+            box-shadow:0 0 20px rgba(0,0,0,.2);
+
+        }
+
+        h1{
+
+            text-align:center;
+            margin-bottom:20px;
+
+        }
+
+        p{
+
+            margin:10px 0;
+            font-size:18px;
+
+        }
+
+        #status{
+
+            font-weight:bold;
+            color:green;
+
+        }
+
+        #map{
+
+            width:100%;
+            height:400px;
+            margin-top:20px;
+
+            border-radius:10px;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Location Tracker</h1>
+
+    <p id="status">Requesting Location...</p>
+
+    <p><b>Latitude:</b> <span id="lat">-</span></p>
+
+    <p><b>Longitude:</b> <span id="lon">-</span></p>
+
+    <p><b>Accuracy:</b> <span id="acc">-</span></p>
+
+    <div id="map"></div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+
+let map;
+let marker;
+
+window.onload=function(){
+
+    if(navigator.geolocation){
+
+        navigator.geolocation.getCurrentPosition(
+
+            success,
+
+            error,
+
+            {
+                enableHighAccuracy:true
+            }
+
+        );
+
+    }
+
+    else{
+
+        document.getElementById("status").innerHTML =
+        "Geolocation not supported.";
+
+    }
+
+};
+
+
+function success(position){
+
+    let latitude = position.coords.latitude;
+
+    let longitude = position.coords.longitude;
+
+    let accuracy = position.coords.accuracy;
+
+
+    document.getElementById("status").innerHTML =
+    "Location Found";
+
+
+    document.getElementById("lat").innerHTML =
+    latitude;
+
+    document.getElementById("lon").innerHTML =
+    longitude;
+
+    document.getElementById("acc").innerHTML =
+    accuracy.toFixed(2)+" meters";
+
+
+    fetch("/save_location",{
+
+        method:"POST",
+
+        headers:{
+
+            "Content-Type":"application/json"
+
+        },
+
+        body:JSON.stringify({
+
+            latitude:latitude,
+
+            longitude:longitude,
+
+            accuracy:accuracy
+
+        })
+
+    });
+
+
+    map=L.map('map').setView([latitude,longitude],16);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+
+        attribution:'© OpenStreetMap'
+
+    }).addTo(map);
+
+
+    marker=L.marker([latitude,longitude]).addTo(map);
+
+    marker.bindPopup("Your Current Location").openPopup();
+
+}
+
+
+function error(err){
+
+    document.getElementById("status").innerHTML =
+    "Location Permission Denied";
+
+}
+
+</script>
+
+</body>
+</html>
